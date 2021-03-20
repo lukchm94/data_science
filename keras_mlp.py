@@ -7,6 +7,8 @@ import numpy as np
 from tensorflow.keras import layers
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+import seaborn as sn
+import matplotlib.pyplot as plt
 
 # engineer tracker data
 def prepare_data_raw(df):
@@ -67,8 +69,56 @@ def normalize_dataset(dataset, minmax):
 
 
 # load data
-train = pd.read_csv(r'learn.csv')
-test = pd.read_csv(r'test.csv')
+train = pd.read_csv(r'winequality-white.csv')
+print(train.dtypes)
+print(train.shape)
+print(train.quality.value_counts())
+print(train.head())
+i = 0
+for col in train.columns:
+    print(col)
+    i += 1
+print(i)
+
+dataset = train.values.tolist()
+dataset = np.array(dataset)
+str_column_to_int(dataset, len(dataset[0]) - 1)
+
+print(dataset[0])
+
+print(train.tail(2))
+'''
+corrMatrix = train.corr()
+sn.heatmap(corrMatrix, annot=True)
+plt.show()
+'''
+'''
+#test = pd.read_csv(r'test.csv')
+dataset = train.values.tolist()
+minmax = dataset_minmax(dataset)
+normalize_dataset(dataset, minmax)
+dataset = np.array(dataset)
+print(dataset[0])
+
+# split into input (X) and output (y) variables
+x_train = dataset[:, 0:11]
+y_train = dataset[:, 11]
+
+# define the keras model
+model = tf.keras.Sequential()
+model.add(layers.Dense(16, input_dim=11, activation='relu'))
+model.add(layers.Dense(11, activation='relu'))
+model.add(layers.Dense(1, activation='sigmoid'))
+
+# compile the keras model
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+# fit the keras model on the dataset
+model.fit(x_train, y_train, epochs=300, batch_size=15)
+
+# make class predictions train
+predictions = model.predict_classes(x_train)
+_, accuracy = model.evaluate(x_train, y_train)
+print('Accuracy: %.2f' % (accuracy*100))
 
 train_dataset, train_index = prepare_data_raw(train)
 test_dataset, test_index = prepare_data_raw(test)
@@ -183,7 +233,7 @@ df_errors.to_csv('errors_test_2.csv', index=False, header=False)
 df_tru_red = pd.DataFrame(tru_red)
 df_tru_red.to_csv('predicted_red_test_2.csv', index=False, header=False)
 
-'''
+
 # evaluate the keras model
 _, accuracy = model.evaluate(x_train, y_train)
 print('Accuracy: %.2f' % (accuracy*100))
