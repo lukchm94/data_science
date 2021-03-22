@@ -1,27 +1,16 @@
 import pandas as pd
-import datetime as dt
 import seaborn as sn
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.preprocessing import LabelEncoder, MaxAbsScaler
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix, classification_report
+import tkinter as tk
 from sklearn.tree import export_graphviz
 from six import StringIO
 from IPython.display import Image
 import pydotplus
-
-now = str(dt.datetime.now())
-now = now.replace(' ', '_')
-le = LabelEncoder()
-sc = MinMaxScaler()
-
-def scaling(df):
-    df_scaled = df.copy()
-    for column in df_scaled.columns:
-        df_scaled[column] = df_scaled[column] / df_scaled[column].abs().max()
-    return df_scaled
 
 def dec_tree(x, y):
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.4)
@@ -60,50 +49,88 @@ def log_reg(x, y):
 
 def check_for_nan(df):
     print(df.isnull().any())
-    print(df.shape)
-
     for col in df.columns:
         if df[col].isnull().any() == True:
             print('Count of number of NaN in ', col, ' column: ', df[col].isnull().sum())
             print(df[col].value_counts())
+            print(df[col].mode()[0])
+            if df[col].isnull().sum() <= (df.shape[0]/2):
+                df[col].fillna(str(df[col].mode()[0]), inplace=True)
+            else:
+                del df[col]
+    return df
 
-df = pd.read_csv(r'in-vehicle-coupon-recommendation.csv')
-print(df.Y.value_counts())
-check_for_nan(df)
-df = df.drop('car', 1)
-df = df.drop('toCoupon_GEQ5min', 1)
-df = df.fillna({'Bar': 'never'})
-df = df.fillna({'CoffeeHouse': 'less1'})
-df = df.fillna({'CarryAway': '1~3'})
-df = df.fillna({'RestaurantLessThan20': '1~3'})
-df = df.fillna({'Restaurant20To50': '1~3'})
-check_for_nan(df)
+def maximum_absolute_scaling(df):
+    df_scaled = df.copy()
+    for column in df_scaled.columns:
+        df_scaled[column] = df_scaled[column]  / df_scaled[column].abs().max()
+    return df_scaled
 
-target_column = ['Y']
-predictors = list(set(list(df.columns)) - set(target_column))
-x = df[predictors]
-y = df[target_column]
+def encode_int(x):
+    le = LabelEncoder()
+    col = len(x.columns)
+    for i in range(col):
+        x.iloc[:, i] = le.fit_transform(x.iloc[:, i])
+    return x
 
-col = len(x.columns)
-for i in range(col):
-    x.iloc[:, i] = le.fit_transform(x.iloc[:, i])
+def log_reg_complete():
+    abs_scaler = MaxAbsScaler()
+    df = pd.read_csv(r'in-vehicle-coupon-recommendation.csv')
+    print(df.Y.value_counts())
+    df_checked = check_for_nan(df)
+    df_int = encode_int(df_checked)
+    abs_scaler.fit(df_int)
+    abs_scaler.max_abs_
+    scaled_data = abs_scaler.transform(df_int)
+    df_scaled = pd.DataFrame(scaled_data, columns=df_int.columns)
 
-x_scaled = scaling(x)
-cm = x_scaled.corr()
-sn.heatmap(cm, annot=False, linewidths=0.5, cmap='ocean')
-plt.show()
-dec_tree(x, y)
-log_reg(x, y)
-dec_tree(x_scaled, y)
-log_reg(x_scaled, y)
-'''
-df_gf = pd.read_csv(r'test.csv')
-df_gops = pd.read_csv(r'tracker.csv')
-x, y = prepare_data(df)
-x_scaled = scaling(x)
-x_gf, y_gf = prepare_data_raw(df_gf)
-x_gf_scaled = scaling(x_gf)
-x_gops, y_gops = prepare_data(df_gops)
-x_gops_scaled = scaling(x_gops)
+    target_column = ['Y']
+    predictors_scaled = list(set(list(df_scaled.columns)) - set(target_column))
+    predictors_int = list(set(list(df_int.columns)) - set(target_column))
+    x_scaled = df_scaled[predictors_scaled]
+    y_scaled = df_scaled[target_column]
+    x_int = df_int[predictors_int]
+    y_int = df_int[target_column]
 
-'''
+    cm = x_scaled.corr()
+    sn.heatmap(cm, annot=False, linewidths=0.5, cmap='ocean')
+    plt.show()
+    print('\n----- ORIGINAL RESULTS -----\n')
+    log_reg(x_int, y_int)
+    print('\n----- SCALED RESULTS -----\n')
+    log_reg(x_scaled, y_scaled)
+
+def dec_tree_complete():
+    abs_scaler = MaxAbsScaler()
+    df = pd.read_csv(r'in-vehicle-coupon-recommendation.csv')
+    print(df.Y.value_counts())
+    df_checked = check_for_nan(df)
+    df_int = encode_int(df_checked)
+    abs_scaler.fit(df_int)
+    abs_scaler.max_abs_
+    scaled_data = abs_scaler.transform(df_int)
+    df_scaled = pd.DataFrame(scaled_data, columns=df_int.columns)
+
+    target_column = ['Y']
+    predictors_scaled = list(set(list(df_scaled.columns)) - set(target_column))
+    predictors_int = list(set(list(df_int.columns)) - set(target_column))
+    x_scaled = df_scaled[predictors_scaled]
+    y_scaled = df_scaled[target_column]
+    x_int = df_int[predictors_int]
+    y_int = df_int[target_column]
+
+    cm = x_scaled.corr()
+    sn.heatmap(cm, annot=False, linewidths=0.5, cmap='ocean')
+    plt.show()
+    print('\n----- ORIGINAL RESULTS -----\n')
+    dec_tree(x_int, y_int)
+    print('\n----- SCALED RESULTS -----\n')
+    dec_tree(x_scaled, y_scaled)
+
+#Main loop for the code
+window = tk.Tk()
+tree = tk.Button(text='Run Decision Tree', width=30, height=6, command=dec_tree_complete)
+reg = tk.Button(text='Run Logistic Regression', width=30, height=6, command=log_reg_complete)
+tree.pack()
+reg.pack()
+window.mainloop()
