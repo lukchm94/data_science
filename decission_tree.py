@@ -16,7 +16,7 @@ from IPython.display import Image
 import pydotplus
 
 def dec_tree(x, y):
-    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.4)
+    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
     print('\nTRAIN SHAPE - DECISSION TREE\n')
     print(X_train.shape, y_train.shape)
     print('\nTEST SHAPE - DECISSION TREE\n')
@@ -39,7 +39,7 @@ def dec_tree(x, y):
     '''
 
 def log_reg(x, y):
-    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.4)
+    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
     print(X_train.shape, y_train.shape)
     print(X_test.shape, y_test.shape)
     classifier = LogisticRegression()
@@ -97,7 +97,7 @@ def dec_tree_complete(df, abs_scaler):
     dec_tree(x_scaled, y_scaled)
 
 def mlp_network(df, abs_scaler):
-    df_train, df_test = train_test_split(df, test_size=0.33)
+    df_train, df_test = train_test_split(df, test_size=0.2)
     x_scaled_train, y_scaled_train, x_int_train, y_int_train = prepare_classification(df_train, abs_scaler)
     x_scaled_test, y_scaled_test, x_int_test, y_int_test = prepare_classification(df_train, abs_scaler)
     cm = x_scaled_train.corr()
@@ -107,11 +107,12 @@ def mlp_network(df, abs_scaler):
     model = tf.keras.Sequential()
     model.add(layers.Dense(25, input_dim=24, activation='relu'))
     model.add(layers.Dense(24, activation='relu'))
+    model.add(layers.Dense(24, activation='relu'))
     model.add(layers.Dense(1, activation='sigmoid'))
     # compile the keras model
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     # fit the keras model on the dataset
-    model.fit(x_scaled_train, y_scaled_train, epochs=300, batch_size=15)
+    model.fit(x_scaled_train, y_scaled_train, epochs=500, batch_size=25)
     # make class predictions train
     predictions = model.predict_classes(x_scaled_test)
     # evaluate the keras model
@@ -140,10 +141,12 @@ abs_scaler = MaxAbsScaler()
 df = pd.read_csv(r'in-vehicle-coupon-recommendation.csv')
 #Main loop for the code
 window = tk.Tk()
-tree = tk.Button(text='Run Decision Tree', width=30, height=10, command=lambda: dec_tree_complete(df, abs_scaler))
-reg = tk.Button(text='Run Logistic Regression', width=30, height=10, command=lambda: log_reg_complete(df, abs_scaler))
-mlp = tk.Button(text='Run Neural Network Algorithm', width=30, height=10, command=lambda: mlp_network(df, abs_scaler))
-tree.pack()
-reg.pack()
-mlp.pack()
+window.geometry('400x400')
+window.title('Machine Learning by Lukasz Chmielewski, 2021')
+tree = tk.Button(text='Run Decision Tree', width=40, height=5, pady=6,command=lambda: dec_tree_complete(df, abs_scaler)).grid(row=0, column=0, pady=6)
+reg = tk.Button(text='Run Logistic Regression', width=40, height=5, pady=6, command=lambda: log_reg_complete(df, abs_scaler)).grid(row=1, column=0, pady=6)
+mlp = tk.Button(text='Run Neural Network Algorithm', width=40, height=5, pady=6, command=lambda: mlp_network(df, abs_scaler)).grid(row=2, column=0, pady=6)
+quit = tk.Button(window,text='Quit', width=10, command=window.quit).grid(row=4,column=0,sticky=tk.W,pady=4)
+tk.Label(window, text='').grid(row=2, column=1, pady=6)
+
 window.mainloop()
